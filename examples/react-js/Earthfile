@@ -1,0 +1,22 @@
+
+FROM node:15.12.0-alpine3.13
+WORKDIR /usr/src/app
+
+
+deps:
+    COPY package.json package-lock.json ./
+    RUN npm install
+    SAVE ARTIFACT package-lock.json AS LOCAL ./package-lock.json
+    CMD ["npm", "run", "start"]
+
+build:
+    FROM +deps
+    COPY ./ ./
+    RUN npx webpack
+    SAVE ARTIFACT index.js /src/index.js AS LOCAL ./src/index.js
+docker:
+    FROM +deps
+    COPY +build/public ./public
+    EXPOSE 80
+    ENTRYPOINT ["/usr/src/app/node_modules/http-server/bin/http-server", "./public"]
+    SAVE IMAGE --push earthly/examples:react-js
